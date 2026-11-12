@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pīwakawaka's Quantum Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Space Grotesk', sans-serif; 
+            background-color: #F8FAFC; 
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            touch-action: none; 
+            user-select: none; 
+            -webkit-user-select: none; 
+        }
+        
+        /* Quantum Lab Grid - Deep Blues and Golden highlights */
+        .quantum-grid {
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(139, 92, 246, 0.15) 2px, transparent 2px),
+                linear-gradient(to bottom, rgba(139, 92, 246, 0.15) 2px, transparent 2px);
+            z-index: 0;
+        }
+
+        .animate-float { animation: float 3s ease-in-out infinite; transform-origin: bottom center; }
+        @keyframes float { 0% { transform: translateY(0px) scale(1); } 50% { transform: translateY(-15px) scale(1.05); } 100% { transform: translateY(0px) scale(1); } }
+        
+        .animate-bounce-fast { animation: bounce-fast 0.6s infinite; }
+        @keyframes bounce-fast { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        
+        /* Golden pulse for the quantum visualizer */
+        .animate-pulse-glow { animation: pulse-glow 2s infinite alternate; }
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 15px rgba(250, 204, 21, 0.4); } 100% { box-shadow: 0 0 35px rgba(250, 204, 21, 0.8); } }
+        
+        .game-btn { box-shadow: 0 6px 0px rgba(0,0,0,0.2); transition: all 0.1s; }
+        .game-btn:active:not(:disabled) { transform: translateY(6px) !important; box-shadow: 0 0px 0px rgba(0,0,0,0.2) !important; }
+        .level-locked { filter: grayscale(100%) opacity(0.6); pointer-events: none; }
+        
+        .error-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
+        
+        .screen-container { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease-in-out; }
+        .slide-in-right { transform: translateX(0%); opacity: 1; pointer-events: auto; }
+        .slide-out-left { transform: translateX(-100%); opacity: 0; pointer-events: none; }
+        .slide-out-right { transform: translateX(100%); opacity: 0; pointer-events: none; }
+        
+        .particle { position: absolute; pointer-events: none; animation: pop 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 100; font-family: 'Space Grotesk', sans-serif; font-weight: bold; color: #facc15; }
+        @keyframes pop { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; } }
+        
+        .star-filled { filter: grayscale(0%) opacity(1) drop-shadow(0 0 5px #facc15); transform: scale(1.1); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .star-empty { filter: grayscale(100%) opacity(0.3); transform: scale(0.9); transition: all 0.3s; }
+        
+        /* Mobile Scroll System - Fortified */
+        .scroll-area { 
+            -webkit-overflow-scrolling: touch; 
+            overscroll-behavior-y: contain; 
+            touch-action: pan-y !important; 
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+        }
+
+        .scroll-area::-webkit-scrollbar { width: 8px; }
+        .scroll-area::-webkit-scrollbar-track { background: rgba(139, 92, 246, 0.1); border-radius: 8px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.6); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+        
+        .tts-active { box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.4); border-color: #38bdf8 !important; transform: scale(1.02); transition: all 0.3s ease-in-out; }
+        
+        .speech-bubble { position: relative; }
+        .speech-bubble::after { content: ''; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); border-width: 20px 20px 0; border-style: solid; border-color: white transparent transparent transparent; display: block; width: 0; z-index: 1; }
+        .speech-bubble::before { content: ''; position: absolute; bottom: -26px; left: 50%; transform: translateX(-50%); border-width: 24px 24px 0; border-style: solid; border-color: #fde047 transparent transparent transparent; display: block; width: 0; z-index: 0; }
+        
+        .data-cloud { position: absolute; opacity: 0.4; animation: drift linear infinite; pointer-events: none; z-index: 0; filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.5)); }
+        @keyframes drift { from { transform: translateX(-20vw) rotate(0deg); } to { transform: translateX(120vw) rotate(360deg); } }
+        
+        /* Golden Chandelier Core Background Element */
+        .quantum-core { position: absolute; top: 5%; right: 10%; width: 120px; height: 120px; background: radial-gradient(circle, #fde047 0%, #ca8a04 100%); border-radius: 10%; box-shadow: 0 0 80px #facc15; animation: pulse-core 4s infinite alternate; pointer-events: none; z-index: 0; transform: rotate(45deg); }
+        @keyframes pulse-core { 0% { transform: scale(1) rotate(45deg); box-shadow: 0 0 50px #facc15; } 100% { transform: scale(1.1) rotate(45deg); box-shadow: 0 0 100px #fef08a; } }
+        
+        #level-visual div { font-size: 4rem !important; line-height: 1 !important; }
+        @media (min-width: 640px) { #level-visual div { font-size: 6rem !important; } }
+    </style>
+</head>
+<body>
+
+    <!-- Quantum Environment Background -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden quantum-grid">
+        <div class="quantum-core"></div>
+        <div class="data-cloud text-6xl" style="top: 15%; animation-duration: 40s; font-size: 6rem;">🪙</div>
+        <div class="data-cloud text-5xl" style="top: 35%; animation-duration: 55s; animation-delay: -20s; font-size: 5rem;">❄️</div>
+        <div class="data-cloud text-7xl" style="top: 65%; animation-duration: 35s; animation-delay: -10s; font-size: 8rem;">✨</div>
+        <div class="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-indigo-200 to-transparent opacity-50"></div>
+    </div>
+
+    <!-- Animal SVGs -->
+    <template id="svg-piwakawaka"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><path d="M40,55 C40,40 50,30 65,30 C75,30 80,40 75,55 C70,70 50,75 40,55 Z" fill="#8B5A2B"/><path d="M60,35 C70,35 75,45 70,55 Z" fill="#4A3020"/><ellipse cx="55" cy="50" rx="15" ry="10" fill="#E6DCC8"/><path d="M75,45 L85,42 L78,50 Z" fill="#333"/><circle cx="65" cy="40" r="3" fill="#000"/><circle cx="66" cy="39" r="1" fill="#fff"/><path d="M45,55 C20,40 10,60 15,80 C30,70 45,75 55,65 Z" fill="#A08060"/><path d="M15,80 C25,85 45,85 55,75" fill="none" stroke="#fff" stroke-width="2"/><path d="M50,70 L45,85 M55,70 L55,85" stroke="#333" stroke-width="2"/></svg></template>
+    <template id="svg-kekeno"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><path d="M10,85 C30,95 70,95 80,70 C90,40 75,20 60,25 C50,28 45,45 35,55 C20,70 10,70 10,85 Z" fill="#4a4441"/><path d="M40,70 C50,85 70,80 60,65 Z" fill="#302c2a"/><circle cx="65" cy="35" r="3" fill="#000"/><circle cx="80" cy="32" r="4" fill="#1a1a1a"/><path d="M82,35 L95,40 M82,38 L93,45" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg></template>
+    <template id="svg-kiwi"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><path d="M40,75 L40,90 M35,90 L45,90 M60,75 L60,90 M55,90 L65,90" stroke="#d97736" stroke-width="4" stroke-linecap="round"/><ellipse cx="50" cy="55" rx="35" ry="25" fill="#5c4033"/><circle cx="25" cy="45" r="15" fill="#5c4033"/><path d="M12,50 Q5,65 2,80" stroke="#e8c39e" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="20" cy="42" r="2.5" fill="#000"/></svg></template>
+    <template id="svg-huntaway"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><path d="M30,90 L30,50 C30,30 50,30 60,35 C75,40 85,50 85,70 L85,90 Z" fill="#111111"/><path d="M60,65 C75,65 85,75 85,90 L60,90 Z" fill="#c47029"/><circle cx="55" cy="40" r="4" fill="#c47029"/><path d="M75,55 C85,55 85,65 85,70 C75,70 70,65 75,55 Z" fill="#c47029"/><path d="M35,35 C25,45 25,60 35,55 Z" fill="#111111"/><circle cx="85" cy="55" r="3" fill="#000"/><circle cx="65" cy="45" r="2.5" fill="#fff"/><circle cx="66" cy="45" r="1.5" fill="#000"/></svg></template>
+    <template id="svg-kea"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><path d="M40,80 L40,90 M55,80 L55,90" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M20,60 L5,85 L25,75 Z" fill="#4d5e3c"/><ellipse cx="45" cy="55" rx="25" ry="30" fill="#5e6b45"/><path d="M35,45 C50,45 65,70 45,80 Z" fill="#5e6b45"/><path d="M40,55 C55,55 60,70 45,75 Z" fill="#d95e16"/><circle cx="60" cy="35" r="18" fill="#5e6b45"/><path d="M75,30 C90,30 90,50 80,55 C85,45 80,40 75,40 Z" fill="#4a4a4a"/><circle cx="65" cy="32" r="2.5" fill="#000"/><circle cx="55" cy="40" r="4" fill="#d95e16" opacity="0.6"/></svg></template>
+    <template id="svg-whio"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><ellipse cx="50" cy="60" rx="35" ry="25" fill="#5A6B7C"/><circle cx="75" cy="40" r="15" fill="#5A6B7C"/><path d="M70,55 Q80,80 40,85 Z" fill="#8B4513"/><path d="M85,35 Q98,40 88,45 Z" fill="#E6DCC8"/><circle cx="78" cy="35" r="2.5" fill="#000"/></svg></template>
+    <template id="svg-tui"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><path d="M30,80 Q50,90 65,70 Q75,40 60,30 Q40,30 30,50 Z" fill="#1A2B3C"/><circle cx="55" cy="60" r="6" fill="#FFF" filter="drop-shadow(0 2px 2px rgba(0,0,0,0.3))"/><circle cx="65" cy="35" r="2" fill="#000"/><path d="M68,32 Q85,35 68,40 Z" fill="#111"/></svg></template>
+    <template id="svg-ruru"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><ellipse cx="50" cy="65" rx="30" ry="25" fill="#5C4033"/><circle cx="50" cy="35" r="22" fill="#4A3020"/><circle cx="40" cy="35" r="8" fill="#F4C430"/><circle cx="60" cy="35" r="8" fill="#F4C430"/><circle cx="40" cy="35" r="3" fill="#000"/><circle cx="60" cy="35" r="3" fill="#000"/><path d="M45,45 L55,45 L50,55 Z" fill="#111"/></svg></template>
+    <template id="svg-takahe"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><ellipse cx="45" cy="60" rx="35" ry="30" fill="#204070"/><ellipse cx="70" cy="40" rx="15" ry="18" fill="#204070"/><path d="M80,30 Q95,45 80,55 Z" fill="#C03030"/><circle cx="75" cy="35" r="2.5" fill="#000"/><path d="M35,80 L35,95 M55,80 L55,95" stroke="#C03030" stroke-width="4"/></svg></template>
+    <template id="svg-kakapo"><svg viewBox="0 0 100 100" class="w-32 h-32 sm:w-48 sm:h-48 drop-shadow-2xl"><ellipse cx="50" cy="55" rx="35" ry="40" fill="#557B3E"/><circle cx="50" cy="35" r="20" fill="#759A4E"/><path d="M45,40 L55,40 L50,50 Z" fill="#B0A080"/><circle cx="42" cy="32" r="2" fill="#000"/><circle cx="58" cy="32" r="2" fill="#000"/><path d="M15,55 Q5,70 15,85" stroke="#446130" stroke-width="3" fill="none"/></svg></template>
+
+    <!-- Mobile-Optimized Top Controls -->
+    <div class="absolute top-2 sm:top-4 right-2 sm:right-4 z-[60] flex gap-2 sm:gap-4 pointer-events-auto">
+        <button id="btn-educator" class="game-btn bg-violet-600 hover:bg-violet-500 text-white rounded-full w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center text-lg sm:text-2xl border-2 sm:border-4 border-white shadow-lg" title="Educator Notes">💡</button>
+        <button id="btn-music" class="game-btn bg-cyan-500 hover:bg-cyan-400 text-white rounded-full w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center text-lg sm:text-2xl border-2 sm:border-4 border-white shadow-lg">🎵</button>
+        <button id="btn-speech" class="game-btn bg-yellow-500 hover:bg-yellow-400 text-white rounded-full w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center text-lg sm:text-2xl border-2 sm:border-4 border-white shadow-lg">🔊</button>
+    </div>
+
+    <!-- MAIN HUB SCREEN -->
+    <div id="screen-hub" class="screen-container slide-in-right absolute inset-0 flex flex-col items-center pt-20 pb-4 z-20 pointer-events-none">
+        <div class="bg-white/95 p-6 rounded-3xl shadow-2xl border-4 border-yellow-300 mb-6 text-center max-w-2xl mx-4 z-10 shrink-0 mt-4 sm:mt-0 relative overflow-hidden pointer-events-auto">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 via-cyan-400 to-violet-500"></div>
+            <h1 class="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-cyan-600 mb-2 drop-shadow-sm">Pīwakawaka's Quantum Journey</h1>
+            <p class="text-slate-600 text-lg sm:text-2xl font-bold" id="hub-instruction">Kia ora! Let's discover the magic of Quantum Computers!</p>
+        </div>
+        <div id="map-nodes" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 relative z-10 w-full max-w-4xl px-4 overflow-y-auto scroll-area flex-1 min-h-0 pb-32 sm:pb-12 pointer-events-auto"></div>
+    </div>
+
+    <!-- LEVEL PLAY SCREEN -->
+    <div id="screen-level" class="screen-container slide-out-right absolute inset-0 flex flex-col z-10 pt-20 sm:pt-24 pointer-events-none">
+        
+        <div class="absolute top-2 sm:top-4 left-2 sm:left-4 z-50 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 pointer-events-auto max-w-[60%]">
+            <button id="btn-back" class="game-btn bg-rose-500 hover:bg-rose-400 text-white rounded-full px-4 py-2 sm:px-6 sm:py-3 font-black text-sm sm:text-xl border-2 sm:border-4 border-white whitespace-nowrap shadow-lg">⬅️ Hub</button>
+            <div id="level-progress" class="bg-white/95 rounded-full px-2 sm:px-4 py-1 sm:py-2 flex items-center gap-0.5 sm:gap-1 shadow-lg border-2 border-yellow-300 min-h-[32px] sm:min-h-[44px]"></div>
+        </div>
+
+        <div class="relative flex-1 min-h-0 flex flex-col items-center justify-start p-4 sm:p-8 overflow-y-auto scroll-area z-10 w-full pointer-events-auto" id="level-playarea">
+            <div class="flex flex-col items-center justify-center w-full relative shrink-0 max-w-4xl mx-auto">
+                <div id="instruction-box" class="speech-bubble bg-white p-5 sm:p-8 rounded-3xl shadow-xl border-4 border-yellow-300 text-center w-full mb-8 sm:mb-10 transition-all duration-300 z-20">
+                    <p id="level-instruction" class="text-xl sm:text-3xl font-bold text-slate-800 leading-snug tracking-tight"></p>
+                </div>
+                <div id="level-character" class="mb-4 z-10 transform scale-90 sm:scale-110 origin-bottom filter drop-shadow-xl"></div>
+                <div id="level-visual" class="bg-white/95 p-6 sm:p-8 rounded-2xl shadow-lg border-4 border-violet-200 font-black text-slate-800 text-center flex items-center justify-center min-w-[120px] min-h-[120px] mb-8 sm:mb-10 transition-transform duration-200 animate-pulse-glow"></div>
+            </div>
+            
+            <div id="level-options" class="flex flex-col w-full max-w-2xl gap-4 sm:gap-6 shrink-0 mt-auto px-2"></div>
+            
+            <!-- Bulletproof VH Spacer for Mobile Bottom Reachability -->
+            <div class="w-full h-[45vh] shrink-0 pointer-events-none"></div>
+        </div>
+        
+        <div id="loading-overlay" class="absolute inset-0 bg-violet-900/40 backdrop-blur-md z-[55] hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none">
+            <div class="text-6xl animate-spin mb-4">⚛️</div>
+            <h3 class="text-3xl font-black text-yellow-300 bg-white/95 px-8 py-3 rounded-full shadow-2xl border-4 border-cyan-400">Quantum Calculating...</h3>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div id="modal-success" class="absolute inset-0 bg-slate-900/70 flex items-center justify-center z-[70] hidden backdrop-blur-md pointer-events-auto">
+        <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border-8 border-yellow-400 text-center max-w-sm mx-4 transform transition-transform scale-90" id="success-box">
+            <div class="text-7xl mb-4 animate-bounce">🪙</div>
+            <h2 class="text-3xl font-black text-cyan-600 mb-4" id="success-title">Ka pai! Super smart!</h2>
+            <p class="text-xl font-bold text-slate-700 mb-8" id="success-msg">Concept learned! Level Complete!</p>
+            <button id="btn-next" class="game-btn bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-2xl py-4 px-8 rounded-full border-4 border-white w-full shadow-lg">Next Puzzle!</button>
+        </div>
+    </div>
+
+    <!-- FINALE MODAL -->
+    <div id="modal-finale" class="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-[70] hidden backdrop-blur-md pointer-events-auto">
+        <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border-8 border-yellow-400 text-center max-w-md mx-4 transform transition-transform scale-90 relative overflow-hidden" id="finale-box">
+            <div class="absolute inset-0 quantum-grid opacity-20 pointer-events-none"></div>
+            <div class="text-8xl mb-4 animate-bounce relative z-10">👑⚛️👑</div>
+            <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-yellow-500 mb-4 relative z-10">Tino Pai Rawa Atu!</h2>
+            <p class="text-xl font-bold text-slate-700 mb-8 relative z-10">You completed the Quantum Journey! Your imagination is the greatest magic of all!</p>
+            <button id="btn-restart" class="game-btn bg-violet-600 hover:bg-violet-500 text-white font-black text-2xl py-4 px-8 rounded-full border-4 border-white w-full shadow-lg relative z-10">Reboot Machine</button>
+        </div>
+    </div>
+
+    <!-- EDUCATOR MODAL -->
+    <div id="modal-educator" class="absolute inset-0 bg-slate-900/60 flex items-center justify-center z-[80] hidden backdrop-blur-md pointer-events-auto">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl border-8 border-violet-500 max-w-2xl mx-4 transform transition-transform scale-90 max-h-[90vh] overflow-y-auto" id="educator-box">
+            <h2 class="text-3xl font-black text-violet-700 mb-4 text-center">Educator Notes: Quantum & Pedagogy</h2>
+            <div class="text-slate-700 space-y-4 mb-6 text-sm sm:text-base font-bold tracking-tight">
+                <p>This application integrates <strong>50 Core Quantum Computing Concepts</strong> designed to gently introduce the foundations of quantum physics and advanced computing to 4-to-6-year-olds.</p>
+                <p>It utilizes <strong>Cognitive Load Theory (CLT)</strong> by John Sweller to make advanced concepts accessible without causing fear or confusion:</p>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li><strong>Minimizing Extraneous Load:</strong> The vertical flex-column scroll layout enforces safe mobile tactile behavior. A massive spacer guarantees bottom options are always accessible.</li>
+                    <li><strong>Managing Intrinsic Load:</strong> Highly complex ideas like <em>Superposition</em>, <em>Entanglement</em>, and <em>Interference</em> are translated into ECE-friendly metaphors (spinning coins, magic twins connected by strings, splashing water waves).</li>
+                    <li><strong>Modality Effect:</strong> Text-to-Speech (TTS) supports pre-readers, moving load to the auditory channel.</li>
+                </ul>
+            </div>
+            <button id="btn-close-educator" class="game-btn bg-violet-600 hover:bg-violet-500 text-white font-black text-xl py-3 px-6 rounded-full border-4 border-white w-full text-center shadow-lg">System Understood!</button>
+        </div>
+    </div>
+
+    <script>
+        const GameState = { unlockedLevel: 1, currentLevelObj: null, currentScreen: 'hub', currentQuestionIndex: 0 };
+
+        const SoundManager = {
+            isMusicPlaying: false, initialized: false, bgMusic: null, bgParts: [], uiSynth: null, fxSynth: null, errorSynth: null,
+            init() {
+                if(this.initialized) return;
+                
+                this.uiSynth = new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }}).toDestination();
+                this.uiSynth.volume.value = -15;
+                this.fxSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 1 }}).toDestination();
+                this.fxSynth.volume.value = -12;
+                this.errorSynth = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, oscillator: { type: "triangle" }, envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.2 }}).toDestination();
+                this.errorSynth.volume.value = -10;
+                
+                // Quantum-y background music (Sine wave, slightly mysterious but happy)
+                this.bgMusic = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.2, release: 0.8 }}).toDestination();
+                this.bgMusic.volume.value = -20;
+                
+                const melodies = [
+                    [{"time": "0:0:0", "note": "C4", "dur": "8n"}, {"time": "0:0:2", "note": "G4", "dur": "8n"}, {"time": "0:1:0", "note": "E4", "dur": "4n"}, {"time": "0:2:0", "note": "C5", "dur": "8n"}, {"time": "0:2:2", "note": "G4", "dur": "8n"}, {"time": "0:3:0", "note": "E4", "dur": "4n"}],
+                    [{"time": "0:0:0", "note": "D4", "dur": "8n"}, {"time": "0:0:2", "note": "A4", "dur": "8n"}, {"time": "0:1:0", "note": "F4", "dur": "4n"}, {"time": "0:2:0", "note": "D5", "dur": "8n"}, {"time": "0:2:2", "note": "A4", "dur": "8n"}, {"time": "0:3:0", "note": "F4", "dur": "4n"}],
+                ];
+
+                this.bgParts = melodies.map(mel => {
+                    const part = new Tone.Part((time, value) => {
+                        this.bgMusic.triggerAttackRelease(value.note, value.dur, time);
+                    }, mel);
+                    part.loop = true; part.loopEnd = "1m"; return part;
+                });
+
+                Tone.Transport.loop = true; Tone.Transport.loopEnd = "16m";
+                const bpms = [110, 115];
+                
+                this.bgParts[0].start("0m").stop("8m");
+                this.bgParts[1].start("8m").stop("16m");
+
+                Tone.Transport.schedule((time) => Tone.Transport.bpm.setValueAtTime(bpms[0], time), "0m");
+                Tone.Transport.schedule((time) => Tone.Transport.bpm.setValueAtTime(bpms[1], time), "8m");
+
+                this.initialized = true;
+            },
+            playClick() { if(this.isMusicPlaying && Tone.context && Tone.context.state === 'running') this.uiSynth.triggerAttackRelease("E6", "32n"); },
+            playSuccess() { 
+                if(this.isMusicPlaying && Tone.context && Tone.context.state === 'running') {
+                    const now = Tone.now();
+                    this.fxSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+                    this.fxSynth.triggerAttackRelease(["G5", "C6", "E6"], "8n", now + 0.15);
+                } 
+            },
+            playError() { if(this.isMusicPlaying && Tone.context && Tone.context.state === 'running') this.errorSynth.triggerAttackRelease("C2", "8n"); },
+            async toggleMusic() {
+                if(!this.initialized) { await Tone.start(); this.init(); }
+                const btn = document.getElementById('btn-music');
+                if (this.isMusicPlaying) { Tone.Transport.pause(); btn.classList.replace('bg-violet-500', 'bg-cyan-500'); this.isMusicPlaying = false; } 
+                else { Tone.Transport.start(); btn.classList.replace('bg-cyan-500', 'bg-violet-500'); this.isMusicPlaying = true; }
+            }
+        };
+
+        let femaleVoice = null;
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            femaleVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google UK English Female')));
+            if (!femaleVoice) femaleVoice = voices.find(v => v.lang.startsWith('en'));
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices; loadVoices();
+
+        const levelsData = [
+            { id: 1, title: "1. The Seed: Basics", icon: "💡", subject: "Quantum Seed", characterId: "svg-piwakawaka", questions: [
+                { instruction: "What does a normal computer think like?", visualHTML: `<div class="text-8xl">🎚️</div>`, options: ["A light switch! It only knows On and Off", "A barking dog", "A bouncy ball"], correctAnswer: "A light switch! It only knows On and Off", successMsg: "Ka pai! Normal computers are like tiny light switches." },
+                { instruction: "What is a Quantum Computer?", visualHTML: `<div class="text-8xl">✨</div>`, options: ["A super-powered magic machine", "A shiny toaster", "A loud race car"], correctAnswer: "A super-powered magic machine", successMsg: "Yes! It solves gigantic, magic puzzles." },
+                { instruction: "What does a Quantum Computer look like?", visualHTML: `<div class="text-8xl">🪩</div>`, options: ["A giant golden chandelier", "A green apple", "A sleeping cat"], correctAnswer: "A giant golden chandelier", successMsg: "Awesome! It hangs beautifully upside down." },
+                { instruction: "What does the magic computer use to think?", visualHTML: `<div class="text-8xl">🪙</div>`, options: ["Tiny spinning coins called Qubits", "Magic green beans", "Fluffy soft feathers"], correctAnswer: "Tiny spinning coins called Qubits", successMsg: "Great! Qubits are like tiny magic coins." },
+                { instruction: "Who builds these golden machines?", visualHTML: `<div class="text-8xl">👩‍🔬</div>`, options: ["Super smart scientists", "Friendly dinosaurs", "Space aliens"], correctAnswer: "Super smart scientists", successMsg: "Perfect! Humans build the amazing technology." }
+            ]},
+            { id: 2, title: "2. The Seed: Super Cold", icon: "❄️", subject: "Quantum Seed", characterId: "svg-kekeno", questions: [
+                { instruction: "Is the golden computer hot or cold?", visualHTML: `<div class="text-8xl">🥶</div>`, options: ["Freezing cold! Even colder than space", "Super hot like the sun", "Just warm like a blanket"], correctAnswer: "Freezing cold! Even colder than space", successMsg: "Ka pai! It is the coldest place in the universe." },
+                { instruction: "Why does it need to be so cold?", visualHTML: `<div class="text-8xl">😵‍💫</div>`, options: ["So the spinning coins don't get dizzy", "Because it loves ice cream", "To keep the milk fresh"], correctAnswer: "So the spinning coins don't get dizzy", successMsg: "Yes! If it gets warm, the magic coins fall over." },
+                { instruction: "Do we play normal video games on it?", visualHTML: `<div class="text-8xl">🧩</div>`, options: ["No, we solve the biggest puzzles", "Yes, all day long", "Only on the weekend"], correctAnswer: "No, we solve the biggest puzzles", successMsg: "Awesome! It is built for giant world puzzles." },
+                { instruction: "Is the magic computer faster or slower?", visualHTML: `<div class="text-8xl">🚀</div>`, options: ["Faster than a million normal computers", "Slow as a green turtle", "It doesn't even move"], correctAnswer: "Faster than a million normal computers", successMsg: "Great! It is zooming fast." },
+                { instruction: "Do magic computers replace normal computers?", visualHTML: `<div class="text-8xl">🤝</div>`, options: ["No! They are best friends who help us", "Yes, they eat them", "Only on Tuesday mornings"], correctAnswer: "No! They are best friends who help us", successMsg: "Perfect! They work together as a team." }
+            ]},
+            { id: 3, title: "3. Sprout: Spinning", icon: "🌪️", subject: "Superposition", characterId: "svg-kiwi", questions: [
+                { instruction: "If a coin spins super fast, what side is it?", visualHTML: `<div class="text-8xl">🪙</div>`, options: ["It is a blur! Both at the same time", "Just heads", "Just tails"], correctAnswer: "It is a blur! Both at the same time", successMsg: "Ka pai! This is called Superposition!" },
+                { instruction: "Can a Qubit be 'On' and 'Off' at the same time?", visualHTML: `<div class="text-8xl">🔄</div>`, options: ["Yes! Because it spins super fast", "No, that's totally impossible", "Only when it goes to sleep"], correctAnswer: "Yes! Because it spins super fast", successMsg: "Yes! The spinning is the secret magic." },
+                { instruction: "What happens if we look closely at the spinning coin?", visualHTML: `<div class="text-8xl">👀</div>`, options: ["It stops spinning on just one answer", "It spins faster and faster", "It turns into a green frog"], correctAnswer: "It stops spinning on just one answer", successMsg: "Awesome! Looking at it makes it stop." },
+                { instruction: "How does a normal computer solve a maze?", visualHTML: `<div class="text-8xl">🚶‍♂️</div>`, options: ["It tries one path at a time and walks back", "It jumps over the big wall", "It sits down and cries"], correctAnswer: "It tries one path at a time and walks back", successMsg: "Great! One path at a time is very slow." },
+                { instruction: "How does the magic computer solve a maze?", visualHTML: `<div class="text-8xl">🌊</div>`, options: ["It flows down every path like water", "It gives up and goes home", "It asks a bird to fly over it"], correctAnswer: "It flows down every path like water", successMsg: "Perfect! It tries everything at the exact same time." }
+            ]},
+            { id: 4, title: "4. Sprout: Magic Twins", icon: "🔗", subject: "Entanglement", characterId: "svg-huntaway", questions: [
+                { instruction: "Because it acts like water, does it finish the maze quickly?", visualHTML: `<div class="text-8xl">⚡</div>`, options: ["Yes, instantly!", "No, it takes many years", "Only if you hold its hand"], correctAnswer: "Yes, instantly!", successMsg: "Ka pai! Super fast answers!" },
+                { instruction: "What happens if two magic coins become best friends?", visualHTML: `<div class="text-8xl">🪢</div>`, options: ["They get tied by an invisible string", "They eat a yummy snack", "They fly away into the sky"], correctAnswer: "They get tied by an invisible string", successMsg: "Yes! This invisible string is called Entanglement." },
+                { instruction: "If one twin coin turns red, what does the other do?", visualHTML: `<div class="text-8xl">🔴</div>`, options: ["It turns red instantly too!", "It turns bright blue", "It starts crying loudly"], correctAnswer: "It turns red instantly too!", successMsg: "Awesome! They are perfectly connected." },
+                { instruction: "Does the string work if one twin is on the Moon?", visualHTML: `<div class="text-8xl">🌕</div>`, options: ["Yes! It reaches all the way to space", "No, it breaks in half", "Only if it is in the ocean"], correctAnswer: "Yes! It reaches all the way to space", successMsg: "Great! The connection is everywhere." },
+                { instruction: "Can the magic twins talk to each other?", visualHTML: `<div class="text-8xl">🤫</div>`, options: ["Yes, with secret whispers nobody hears", "No, they are way too shy", "Only by shouting very loudly"], correctAnswer: "Yes, with secret whispers nobody hears", successMsg: "Perfect! Instant secret whispers." }
+            ]},
+            { id: 5, title: "5. Sprout: Bubbles", icon: "🫧", subject: "Quantum Noise", characterId: "svg-kea", questions: [
+                { instruction: "Are the magic spinning coins strong or delicate?", visualHTML: `<div class="text-8xl">🫧</div>`, options: ["Delicate, just like soap bubbles", "Strong like a giant rock", "Hard like heavy metal"], correctAnswer: "Delicate, just like soap bubbles", successMsg: "Ka pai! They need to be kept very safe." },
+                { instruction: "What happens if the room is too noisy or bumpy?", visualHTML: `<div class="text-8xl">💥</div>`, options: ["Pop! The magic bubbles break", "They dance to the loud noise", "They fall fast asleep"], correctAnswer: "Pop! The magic bubbles break", successMsg: "Yes! The computer gets confused when they pop." },
+                { instruction: "What do we call the bumps and noises?", visualHTML: `<div class="text-8xl">🔊</div>`, options: ["Quantum Noise", "A loud rock concert", "A rainy thunder storm"], correctAnswer: "Quantum Noise", successMsg: "Awesome! We need earmuffs for the noise." },
+                { instruction: "What do scientists do if a bubble pops?", visualHTML: `<div class="text-8xl">🛠️</div>`, options: ["They use rules to gently blow a new one", "They cry all day long", "They buy a brand new computer"], correctAnswer: "They use rules to gently blow a new one", successMsg: "Great! Fixing mistakes is part of science." },
+                { instruction: "What invisible things does the computer use?", visualHTML: `<div class="text-8xl">〰️</div>`, options: ["Invisible waves just like water", "Invisible flying cats", "Invisible string cheese"], correctAnswer: "Invisible waves just like water", successMsg: "Perfect! Invisible waves help it think." }
+            ]},
+            { id: 6, title: "6. Sprout: Waves", icon: "🌊", subject: "Interference", characterId: "svg-whio", questions: [
+                { instruction: "What happens when two invisible waves bump?", visualHTML: `<div class="text-8xl">💥</div>`, options: ["They can make a giant splash", "They say excuse me nicely", "They turn into solid ice"], correctAnswer: "They can make a giant splash", successMsg: "Ka pai! Waves bump and splash together." },
+                { instruction: "Does the computer want the giant splash?", visualHTML: `<div class="text-8xl">🎯</div>`, options: ["Yes! It points right to the true answer", "No, it hates getting completely wet", "Only if it's very hot outside"], correctAnswer: "Yes! It points right to the true answer", successMsg: "Yes! The giant splash is the goal." },
+                { instruction: "What happens to the wrong answers?", visualHTML: `<div class="text-8xl">➖</div>`, options: ["The waves flatten them out so they disappear", "They turn bright glowing red", "They get really, really loud"], correctAnswer: "The waves flatten them out so they disappear", successMsg: "Awesome! This is called Interference." },
+                { instruction: "Who waves the wand for this magic orchestra?", visualHTML: `<div class="text-8xl">🪄</div>`, options: ["The human scientist!", "A super smart dog", "A tiny magic fairy"], correctAnswer: "The human scientist!", successMsg: "Great! The scientist conducts the symphony." },
+                { instruction: "When all the coins work together, what do they make?", visualHTML: `<div class="text-8xl">🎶</div>`, options: ["A beautiful song of answers", "A loud annoying beep sound", "A really messy painting"], correctAnswer: "A beautiful song of answers", successMsg: "Perfect! A beautiful song of truth." }
+            ]},
+            { id: 7, title: "7. Stem: Magic Rules", icon: "🌿", subject: "Quantum Real World", characterId: "svg-tui", questions: [
+                { instruction: "Does nature work like a magic computer?", visualHTML: `<div class="text-8xl">🌺</div>`, options: ["Yes! Plants and stars use quantum rules", "No, nature is super boring", "Only the crawling bugs do"], correctAnswer: "Yes! Plants and stars use quantum rules", successMsg: "Ka pai! Nature is the best magic." },
+                { instruction: "Can the magic computer see tiny things?", visualHTML: `<div class="text-8xl">🔬</div>`, options: ["Yes, the tiniest puzzle pieces of the universe", "No, it needs really big glasses", "Only if they are painted shiny gold"], correctAnswer: "Yes, the tiniest puzzle pieces of the universe", successMsg: "Yes! It looks at tiny atoms." },
+                { instruction: "Can the computer help human doctors?", visualHTML: `<div class="text-8xl">🩺</div>`, options: ["Yes! It invents brand-new medicines", "No, it is terrified of doctors", "Only to give out sticky band-aids"], correctAnswer: "Yes! It invents brand-new medicines", successMsg: "Awesome! It solves medicine puzzles to keep us healthy." },
+                { instruction: "Can it build better materials?", visualHTML: `<div class="text-8xl">🧱</div>`, options: ["Yes, metal stronger than a superhero!", "No, only soft wooden blocks", "Only really sticky tape"], correctAnswer: "Yes, metal stronger than a superhero!", successMsg: "Great! Stronger but lighter than a feather." },
+                { instruction: "Can it help electric cars drive?", visualHTML: `<div class="text-8xl">🔋</div>`, options: ["Yes, inventing a battery that drives forever", "No, it takes away all the wheels", "Only for imaginary flying cars"], correctAnswer: "Yes, inventing a battery that drives forever", successMsg: "Perfect! Better batteries for the planet." }
+            ]},
+            { id: 8, title: "8. Stem: Big Puzzles", icon: "🌍", subject: "Quantum Real World", characterId: "svg-ruru", questions: [
+                { instruction: "Can the magic computer fix traffic jams?", visualHTML: `<div class="text-8xl">🚗</div>`, options: ["Yes, by looking at every single car at once", "No, it just honks the horn very loud", "Only by flying high above them"], correctAnswer: "Yes, by looking at every single car at once", successMsg: "Ka pai! It finds the best roads instantly." },
+                { instruction: "Can it help save the Earth?", visualHTML: `<div class="text-8xl">🌱</div>`, options: ["Yes, by finding ways to clean the air fast", "No, it makes way too much smoke", "Only if it is Earth Day outside"], correctAnswer: "Yes, by finding ways to clean the air fast", successMsg: "Yes! Helping the planet is a great job." },
+                { instruction: "Can it help plants and farming?", visualHTML: `<div class="text-8xl">🥕</div>`, options: ["Yes, by inventing super-soil for yummy veggies", "No, it squishes all the green plants", "Only by singing to the leaves"], correctAnswer: "Yes, by inventing super-soil for yummy veggies", successMsg: "Awesome! Yummy food for everyone." },
+                { instruction: "Can it keep our secrets very safe?", visualHTML: `<div class="text-8xl">🔒</div>`, options: ["Yes, it builds a magic lock no one can break", "No, it tells everyone our secrets", "Only if you whisper very softly"], correctAnswer: "Yes, it builds a magic lock no one can break", successMsg: "Great! Quantum locks are super secure." },
+                { instruction: "What happens if a bad guy touches the lock?", visualHTML: `<div class="text-8xl">🚨</div>`, options: ["The bubbles pop and the alarm goes off", "It gives them a friendly high-five", "It opens right up for them"], correctAnswer: "The bubbles pop and the alarm goes off", successMsg: "Perfect! You can't sneak past the magic lock." }
+            ]},
+            { id: 9, title: "9. Stem: Sensors", icon: "🛰️", subject: "Quantum Tech", characterId: "svg-takahe", questions: [
+                { instruction: "What is a Quantum Sensor?", visualHTML: `<div class="text-8xl">🔎</div>`, options: ["A magic magnifying glass to see hidden things", "A robot that just sniffs the flowers", "A super noisy alarm clock"], correctAnswer: "A magic magnifying glass to see hidden things", successMsg: "Ka pai! It senses tiny invisible changes." },
+                { instruction: "Can the sensor see buried treasure?", visualHTML: `<div class="text-8xl">🏴‍☠️</div>`, options: ["Yes, without even digging a deep hole!", "No, it only looks up at the sky", "Only if the treasure is painted red"], correctAnswer: "Yes, without even digging a deep hole!", successMsg: "Yes! It can sense things underground." },
+                { instruction: "Can it help us go to outer space?", visualHTML: `<div class="text-8xl">🌌</div>`, options: ["Yes, it finds the safest path through the stars", "No, it is too scared of the dark", "Only if we are going to the moon"], correctAnswer: "Yes, it finds the safest path through the stars", successMsg: "Awesome! Navigating space puzzles." },
+                { instruction: "Can it guess if it will rain tomorrow?", visualHTML: `<div class="text-8xl">🌧️</div>`, options: ["Yes, by calculating every cloud in the sky", "No, it doesn't like getting water on it", "Only if you ask it very nicely"], correctAnswer: "Yes, by calculating every cloud in the sky", successMsg: "Great! Perfect weather forecasting." },
+                { instruction: "Do we need a golden chandelier in our house?", visualHTML: `<div class="text-8xl">💻</div>`, options: ["No, we talk to it through the internet", "Yes, it hangs in the middle of the kitchen", "Yes, it goes right in the bedroom"], correctAnswer: "No, we talk to it through the internet", successMsg: "Perfect! It stays in its cold room while we connect." }
+            ]},
+            { id: 10, title: "10. Bloom: The Boss", icon: "👑", subject: "Empowerment", characterId: "svg-kakapo", questions: [
+                { instruction: "What puzzle would you solve with the magic computer?", visualHTML: `<div class="text-8xl">🛹</div>`, options: ["I would invent a flying skateboard!", "I would just eat a giant sandwich", "I would go to sleep all day"], correctAnswer: "I would invent a flying skateboard!", successMsg: "Ka pai! Your imagination is amazing." },
+                { instruction: "Are you afraid of the giant golden machine?", visualHTML: `<div class="text-8xl">🦸‍♂️</div>`, options: ["No! It is just a helpful tool for us", "Yes, it is way too loud", "Yes, it's too big and scary"], correctAnswer: "No! It is just a helpful tool for us", successMsg: "Yes! You are brave and very smart." },
+                { instruction: "What do you do if the delicate magic bubbles pop?", visualHTML: `<div class="text-8xl">🌬️</div>`, options: ["Take a deep breath, fix the noise, and try again!", "Cry loudly and run far away", "Throw the computer in the bin"], correctAnswer: "Take a deep breath, fix the noise, and try again!", successMsg: "Awesome! Scientists always try again." },
+                { instruction: "What is the most important rule for the magic computer?", visualHTML: `<div class="text-8xl">❤️</div>`, options: ["To solve puzzles that make the world happier", "To eat all the chocolate cookies", "To play video games forever and ever"], correctAnswer: "To solve puzzles that make the world happier", successMsg: "Great! Happy and healthy is the golden rule." },
+                { instruction: "The computer is super fast, but who is the boss?", visualHTML: `<div class="text-8xl">👑</div>`, options: ["I am! My imagination is the greatest magic", "The computer is the boss of me", "The tiny spinning coins are the boss"], correctAnswer: "I am! My imagination is the greatest magic", successMsg: "Perfect! You are the absolute boss of the technology!" }
+            ]}
+        ];
+
+        function sanitizeForSpeech(text) {
+            let safeText = text;
+            const dictionary = {"Kia ora": "Hello", "Pīwakawaka": "Fantail bird", "Ka pai": "Good job", "Tino Pai Rawa Atu": "Excellent", "Kekeno": "New Zealand fur seal", "Qubit": "Cue bit", "Qubits": "Cue bits"};
+            for (const [maori, english] of Object.entries(dictionary)) {
+                safeText = safeText.replace(new RegExp(maori, "gi"), english);
+            }
+            return safeText;
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(sanitizeForSpeech(text));
+            if (femaleVoice) utterance.voice = femaleVoice;
+            utterance.rate = 0.9; utterance.pitch = 1.2;
+            
+            const box = document.getElementById('instruction-box');
+            if (box && GameState.currentScreen === 'level') {
+                utterance.onstart = () => box.classList.add('tts-active');
+                utterance.onend = () => box.classList.remove('tts-active');
+                utterance.onerror = () => box.classList.remove('tts-active');
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function burstTechConfetti(x, y) {
+            const symbols = ['🪙', '⚛️', '✨', '🌊', '❄️'];
+            for (let i = 0; i < 25; i++) {
+                let particle = document.createElement('div');
+                particle.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+                particle.className = 'particle text-3xl drop-shadow-md';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 80 + Math.random() * 150;
+                particle.style.setProperty('--tx', `calc(-50% + ${Math.cos(angle) * velocity}px)`);
+                particle.style.setProperty('--ty', `calc(-50% + ${Math.sin(angle) * velocity}px)`);
+                particle.style.setProperty('--rot', `${Math.random() * 360}deg`);
+                
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 800);
+            }
+        }
+
+        function renderHub() {
+            const container = document.getElementById('map-nodes');
+            container.innerHTML = '';
+            levelsData.forEach((level) => {
+                const isLocked = level.id > GameState.unlockedLevel;
+                const btn = document.createElement('button');
+                btn.className = `game-btn p-4 sm:p-6 rounded-3xl border-4 border-white text-left flex items-center gap-4 w-full ${isLocked ? 'bg-slate-200 level-locked text-slate-400' : 'bg-white hover:bg-yellow-50 shadow-md'}`;
+                btn.innerHTML = `<div class="text-4xl sm:text-5xl drop-shadow-sm">${isLocked ? '🔒' : level.icon}</div><div class="flex-1 min-w-0"><div class="font-black text-lg sm:text-2xl text-slate-800 truncate">${level.title}</div><div class="text-sm sm:text-base font-bold uppercase tracking-wider ${isLocked ? 'text-slate-400' : 'text-violet-600'}">${isLocked ? 'Locked' : level.subject}</div></div>`;
+                if (!isLocked) btn.onclick = () => loadLevel(level);
+                container.appendChild(btn);
+            });
+        }
+
+        function loadLevel(level, isNextQuestion = false) {
+            GameState.currentLevelObj = level;
+            GameState.currentScreen = 'level';
+            
+            if (!isNextQuestion) {
+                GameState.currentQuestionIndex = 0;
+                document.getElementById('screen-hub').classList.replace('slide-in-right', 'slide-out-left');
+                document.getElementById('screen-level').classList.replace('slide-out-right', 'slide-in-right');
+            }
+            
+            const currentQ = level.questions[GameState.currentQuestionIndex];
+            
+            const progressContainer = document.getElementById('level-progress');
+            progressContainer.innerHTML = '';
+            for (let i = 0; i < level.questions.length; i++) {
+                const star = document.createElement('span');
+                star.innerText = '⚡';
+                star.className = `text-sm sm:text-xl drop-shadow-sm ${i <= GameState.currentQuestionIndex ? 'star-filled text-yellow-400' : 'star-empty text-slate-300'}`;
+                progressContainer.appendChild(star);
+            }
+            
+            document.getElementById('level-instruction').innerText = currentQ.instruction;
+            document.getElementById('level-visual').innerHTML = currentQ.visualHTML;
+            document.getElementById('level-character').innerHTML = document.getElementById(level.characterId).innerHTML;
+            document.getElementById('level-character').className = 'animate-float';
+
+            const optionsContainer = document.getElementById('level-options');
+            optionsContainer.innerHTML = '';
+            
+            const colors = ['bg-violet-100 border-violet-300 text-violet-900', 'bg-cyan-100 border-cyan-300 text-cyan-900', 'bg-yellow-100 border-yellow-300 text-yellow-900'];
+            currentQ.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `game-btn ${colors[idx % colors.length]} hover:brightness-95 font-black text-lg sm:text-2xl py-4 px-6 sm:py-5 sm:px-8 rounded-2xl border-4 w-full h-auto min-h-[72px] whitespace-normal break-words leading-snug flex items-center justify-center shadow-md relative overflow-hidden`;
+                btn.innerHTML = `<span class="relative z-10">${opt}</span>`;
+                btn.onclick = () => checkAnswer(opt, level, btn);
+                optionsContainer.appendChild(btn);
+            });
+            
+            document.getElementById('level-playarea').scrollTop = 0;
+        }
+
+        function checkAnswer(selected, level, btnElement) {
+            const currentQ = level.questions[GameState.currentQuestionIndex];
+            const allBtns = document.getElementById('level-options').querySelectorAll('button');
+            
+            if (selected === currentQ.correctAnswer) {
+                SoundManager.playSuccess();
+                allBtns.forEach(b => b.disabled = true);
+                
+                btnElement.className = "game-btn bg-yellow-400 border-yellow-500 text-slate-900 font-black text-lg sm:text-2xl py-4 px-6 sm:py-5 sm:px-8 rounded-2xl border-4 w-full scale-[1.02] sm:scale-105 h-auto min-h-[72px] whitespace-normal break-words leading-snug flex items-center justify-center z-10 transition-transform duration-300 shadow-xl";
+                
+                const rect = btnElement.getBoundingClientRect();
+                burstTechConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                
+                document.getElementById('level-character').classList.replace('animate-float', 'animate-bounce-fast');
+                speak(currentQ.successMsg);
+
+                if (GameState.currentQuestionIndex < level.questions.length - 1) {
+                    setTimeout(() => {
+                        const loader = document.getElementById('loading-overlay');
+                        loader.classList.remove('hidden');
+                        loader.classList.add('pointer-events-auto');
+                        setTimeout(() => loader.classList.remove('opacity-0'), 10);
+                        
+                        setTimeout(() => {
+                            GameState.currentQuestionIndex++; 
+                            loadLevel(level, true);
+                            loader.classList.add('opacity-0');
+                            loader.classList.remove('pointer-events-auto');
+                            setTimeout(() => loader.classList.add('hidden'), 300);
+                        }, 1200); 
+                    }, 1500);
+                } else {
+                    setTimeout(() => {
+                        if(level.id === 10) { 
+                            const modal = document.getElementById('modal-finale');
+                            modal.classList.remove('hidden'); 
+                            document.getElementById('finale-box').classList.remove('scale-90');
+                            speak("Tino Pai Rawa Atu! You are a superstar tech boss!");
+                        } else {
+                            const modal = document.getElementById('modal-success');
+                            modal.classList.remove('hidden'); 
+                            document.getElementById('success-box').classList.remove('scale-90');
+                            speak("Ka pai! Super smart!");
+                            if (GameState.unlockedLevel === level.id) GameState.unlockedLevel++;
+                        }
+                    }, 1500);
+                }
+            } else {
+                SoundManager.playError();
+                
+                const originalClass = btnElement.className;
+                btnElement.className = "game-btn bg-rose-500 border-rose-600 text-white font-black text-lg sm:text-2xl py-4 px-6 sm:py-5 sm:px-8 rounded-2xl border-4 w-full h-auto min-h-[72px] whitespace-normal break-words leading-snug flex items-center justify-center shadow-md";
+                
+                setTimeout(() => btnElement.className = originalClass, 500);
+
+                const charEl = document.getElementById('level-character');
+                charEl.classList.remove('animate-float');
+                void charEl.offsetWidth; 
+                charEl.classList.add('error-shake');
+                setTimeout(() => { charEl.classList.remove('error-shake'); charEl.classList.add('animate-float'); }, 400);
+
+                speak("Not quite! Let's try again. " + currentQ.instruction);
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById('btn-back')?.addEventListener('click', () => {
+                GameState.currentScreen = 'hub';
+                document.getElementById('screen-level').classList.replace('slide-in-right', 'slide-out-right');
+                document.getElementById('screen-hub').classList.replace('slide-out-left', 'slide-in-right');
+                window.speechSynthesis.cancel(); renderHub();
+            });
+            
+            document.getElementById('btn-next')?.addEventListener('click', () => {
+                document.getElementById('success-box').classList.add('scale-90');
+                setTimeout(() => document.getElementById('modal-success').classList.add('hidden'), 200);
+                document.getElementById('btn-back').click();
+            });
+
+            document.getElementById('btn-restart')?.addEventListener('click', () => {
+                document.getElementById('finale-box').classList.add('scale-90');
+                setTimeout(() => document.getElementById('modal-finale').classList.add('hidden'), 200);
+                GameState.unlockedLevel = 1;
+                document.getElementById('btn-back').click();
+            });
+            
+            document.getElementById('btn-speech')?.addEventListener('click', () => {
+                if (GameState.currentScreen === 'hub') speak(document.getElementById('hub-instruction').innerText);
+                else if (GameState.currentScreen === 'level') speak(GameState.currentLevelObj.questions[GameState.currentQuestionIndex].instruction);
+            });
+            
+            document.getElementById('btn-educator')?.addEventListener('click', () => {
+                document.getElementById('modal-educator').classList.remove('hidden');
+                setTimeout(() => document.getElementById('educator-box').classList.remove('scale-90'), 10);
+            });
+            
+            document.getElementById('btn-close-educator')?.addEventListener('click', () => {
+                document.getElementById('educator-box').classList.add('scale-90');
+                setTimeout(() => document.getElementById('modal-educator').classList.add('hidden'), 200);
+            });
+            
+            document.getElementById('btn-music')?.addEventListener('click', () => SoundManager.toggleMusic());
+            document.body.addEventListener('click', (e) => { if (e.target.closest('.game-btn') && e.target.id !== 'btn-music') SoundManager.playClick(); });
+            
+            renderHub();
+        };
+    </script>
+</body>
+</html>
